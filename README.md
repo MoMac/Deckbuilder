@@ -8,6 +8,8 @@ We need [Node.js](https://nodejs.org) to install and run scripts.
 
 ## Install and run
 
+Open command line on the folder containing package.json (shift+right click -> open command line here).
+
 Run next commands in your terminal:
 
 | Command | Description |
