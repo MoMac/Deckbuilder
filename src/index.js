@@ -24,42 +24,76 @@ function preload () {
 
 function create () {
 
-    // globals.handArea = this.add.graphics();
-    // globals.handArea.fillStyle(0xffffff);
-    // globals.handArea.fillRect(100, 450, 700, 120);
 
-    globals.handArea = this.add.zone(450, 510).setRectangleDropZone(700, 120);
-
+    //HAND
+    globals.handArea = this.add.zone(450, 510, 700, 120).setRectangleDropZone(700, 120);
+    globals.handArea._type = 'hand';
     //  Just a visual display of the drop zone
-    let handRect = this.add.graphics();
-    handRect.lineStyle(2, 0xffff00);
-    handRect.strokeRect(globals.handArea.x + globals.handArea.input.hitArea.x, globals.handArea.y + globals.handArea.input.hitArea.y, globals.handArea.input.hitArea.width, globals.handArea.input.hitArea.height);
+    this.add.graphics().lineStyle(2, 0xffff00).strokeRect(globals.handArea.x + globals.handArea.input.hitArea.x, globals.handArea.y + globals.handArea.input.hitArea.y, globals.handArea.input.hitArea.width, globals.handArea.input.hitArea.height);
+
+    //MANA
+    globals.manaArea = this.add.zone(450, 370, 700, 120).setRectangleDropZone(700, 120);
+    globals.manaArea._type = 'mana';
+    //  Just a visual display of the drop zone
+    this.add.graphics().lineStyle(2, 0xffff00).strokeRect(globals.manaArea.x + globals.manaArea.input.hitArea.x, globals.manaArea.y + globals.manaArea.input.hitArea.y, globals.manaArea.input.hitArea.width, globals.manaArea.input.hitArea.height);
+
+    //DEFENDERS
+    globals.defenderArea = this.add.zone(450, 230, 700, 120).setRectangleDropZone(700, 120);
+    globals.defenderArea._type = 'defender';
+    //  Just a visual display of the drop zone
+    this.add.graphics().lineStyle(2, 0xffff00).strokeRect(globals.defenderArea.x + globals.defenderArea.input.hitArea.x, globals.defenderArea.y + globals.defenderArea.input.hitArea.y, globals.defenderArea.input.hitArea.width, globals.defenderArea.input.hitArea.height);
+
+    //ATTACKERS
+    globals.attackerArea = this.add.zone(450, 90, 700, 120).setRectangleDropZone(700, 120);
+    globals.attackerArea._type = 'attacker';
+    //  Just a visual display of the drop zone
+    this.add.graphics().lineStyle(2, 0xffff00).strokeRect(globals.attackerArea.x + globals.attackerArea.input.hitArea.x, globals.attackerArea.y + globals.attackerArea.input.hitArea.y, globals.attackerArea.input.hitArea.width, globals.attackerArea.input.hitArea.height);
 
     globals.deck = [];
 
     makeDeck(this);
     globals.deck = shuffleDeck(globals.deck);
 
-    globals.hand = [];
+    globals.cards = {
+        hand: [],
+        defender: [],
+        attacker: [],
+        mana: []
+    };
 
     for (let i = 0; i < 6; i++) {
         drawCard(this);
     }
-        
+    
+    this.input.on('dragstart', function(pointer, gameObject) {
+        globals.prevX = gameObject.x;
+        globals.prevY = gameObject.y;
+    });
+
     this.input.on('drag', function (pointer, gameObject, dragX, dragY) {
         gameObject.x = dragX;
         gameObject.y = dragY;
     });
 
-    // this.input.on('drop', function (pointer, gameObject, dropZone) {
-    //     gameObject.x = dropZone.x;
-    //     gameObject.y = dropZone.y;
-    // });
+    this.input.on('dragend', function (pointer, gameObject) {
+        const cardType = gameObject._type;
+        const zone = globals[cardType + "Area"];
+
+        if (zone.getBounds().contains(pointer.x, pointer.y)) {
+            setCardPosition(gameObject, globals.cards[cardType], zone);
+            globals.cards[cardType].push(gameObject);
+            gameObject.setScale(1).removeInteractive();
+        }
+        else {
+            gameObject.x = globals.prevX;
+            gameObject.y = globals.prevY;
+        }
+    });
 }
 
 function makeDeck (game) {
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 4; i++) {
         globals.deck.push({
             _type: 'mana',
             _img: 'mana',
@@ -93,15 +127,20 @@ function makeDeck (game) {
 
 function drawCard (game) {
     const topCard = globals.deck[0];
-    let drawnCard = game.add.image(0, 0, topCard._img).setInteractive();
+    let drawnCard = game.add.image(0, 0, topCard._img).setInteractive().on('pointerover', function (event) {
+        game.children.bringToTop(drawnCard);
+        this.setScale(1.3);
+    }).on('pointerout', function (event) {
+        this.setScale(1);
+    });
 
-    setCardPosition(drawnCard, globals.hand, globals.handArea);
+    setCardPosition(drawnCard, globals.cards.hand, globals.handArea);
 
     game.input.setDraggable(drawnCard);
 
     Object.assign(drawnCard, topCard);
     globals.deck.shift();
-    globals.hand.push(drawnCard);
+    globals.cards.hand.push(drawnCard);
 }
 
 function setCardPosition (newCard, cards, dropZone) {
